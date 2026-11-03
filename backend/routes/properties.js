@@ -3,7 +3,6 @@ const pool = require('../db');
 
 const router = express.Router();
 
-
 const FILTERS = {
   city: 'L_City = ?',
   zipcode: 'L_Zip = ?',
@@ -18,6 +17,7 @@ const MAX_LIMIT = 100;
 const INTEGER = /^\d+$/;
 const NUMBER = /^\d+(\.\d+)?$/;
 const ZIPCODE = /^\d{5}$/;
+const LISTING_ID = /^\d{1,15}$/;
 
 const COLUMNS = `
   id,
@@ -30,9 +30,7 @@ const COLUMNS = `
   L_Keyword2    AS beds,
   CAST(LM_Dec_3 AS DOUBLE) AS baths,
   LM_Int2_3     AS sqft,
-  L_Type_       AS propertyType,
-  YearBuilt     AS yearBuilt`;
-
+  L_Photos      AS photos`;
 
 function validate(query) {
   for (const [key, value] of Object.entries(query)) {
@@ -62,7 +60,6 @@ function validate(query) {
   return null;
 }
 
-
 router.get('/', async (req, res) => {
   const error = validate(req.query);
   if (error) return res.status(400).json({ error });
@@ -90,6 +87,55 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('GET /api/properties failed:', err.message);
     res.status(500).json({ error: 'Failed to fetch properties' });
+  }
+});
+
+function validateListingId(id) {
+  return LISTING_ID.test(id) ? null : 'Listing ID must be a numeric value of at most 15 digits';
+}
+
+router.get('/:id/openhouses', async (req, res) => {
+  const { id } = req.params;
+  const error = validateListingId(id);
+  if (error) return res.status(400).json({ error });
+
+  try {
+    const [property] = await pool.query('SELECT 1 FROM rets_property WHERE L_ListingID = ? LIMIT 1', [id]);
+    if (property.length === 0) {
+      return res.status(404).json({ error: `No property found with listing ID ${id}` });
+    }
+
+    const [openHouses] = await pool.query(
+      `SELECT id, L_ListingID AS listingId, DATE_FORMAT(OpenHouseDate, '%Y-%m-%d') AS date, OH_StartTime AS startTime,
+              OH_EndTime AS endTime, all_data AS allData
+       FROM rets_openhouse
+       WHERE L_ListingID = ?
+       ORDER BY OpenHouseDate, OH_StartTime`,
+      [id]
+    );
+
+    res.json(openHouses);
+  } catch (err) {
+    console.error(`GET /api/properties/${id}/openhouses failed:`, err.message);
+    res.status(500).json({ error: 'Failed to fetch open houses' });
+  }
+});
+
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  const error = validateListingId(id);
+  if (error) return res.status(400).json({ error });
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM rets_property WHERE L_ListingID = ? LIMIT 1', [id]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: `No property found with listing ID ${id}` });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(`GET /api/properties/${id} failed:`, err.message);
+    res.status(500).json({ error: 'Failed to fetch property' });
   }
 });
 

@@ -1,0 +1,38 @@
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.filters input,
+.filters select,
+.filters button {
+  font: inherit;
+  padding: 6px 8px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #767676;
+  border-radius: 0;
+}
+
+.filters button {
+  cursor: pointer;
+}
+
+.filters input {
+  width: 130px;
+}
+
+.filters__buttons {
+  display: flex;
+  gap: 8px;
+}

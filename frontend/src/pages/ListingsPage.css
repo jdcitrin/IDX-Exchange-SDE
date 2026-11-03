@@ -1,0 +1,11 @@
+.listings__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.listings__count {
+  margin: 0 0 16px;
+  font-size: 1.25rem;
+  color: #000;
+}
