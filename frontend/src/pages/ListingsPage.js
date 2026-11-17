@@ -1,36 +1,57 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { fetchProperties } from '../api/client';
+import Pagination from '../components/Pagination';
 import PropertyCard from '../components/PropertyCard';
 import PropertyFilters from '../components/PropertyFilters';
 import './ListingsPage.css';
 
+// filters with the property grid and pagination
 export default function ListingsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const latestRequest = useRef(0);
+  const [filters, setFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
 
-  const loadProperties = useCallback(async (filters = {}) => {
-    const requestId = ++latestRequest.current;
+  useEffect(() => {
+    let ignore = false;
     setLoading(true);
     setError(null);
 
-    try {
-      const result = await fetchProperties({ ...filters, limit: 20, offset: 0 });
-      if (requestId === latestRequest.current) setData(result);
-    } catch (err) {
-      if (requestId === latestRequest.current) setError(err.message);
-    } finally {
-      if (requestId === latestRequest.current) setLoading(false);
-    }
-  }, []);
+    fetchProperties({ ...filters, limit: itemsPerPage, offset: (currentPage - 1) * itemsPerPage })
+      .then((result) => {
+        if (!ignore) setData(result);
+      })
+      .catch((err) => {
+        if (!ignore) setError(err.message);
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
 
-  useEffect(() => {
-    loadProperties();
     return () => {
-      latestRequest.current += 1;
+      ignore = true;
     };
-  }, [loadProperties]);
+  }, [filters, currentPage, itemsPerPage]);
+
+  // apply new filters and go back to page 1
+  function handleSearch(newFilters) {
+    setFilters({ ...newFilters });
+    setCurrentPage(1);
+  }
+
+  // remove all filters and go back to page 1
+  function handleClear() {
+    setFilters({});
+    setCurrentPage(1);
+  }
+
+  // change page and scroll to the top
+  function handlePageChange(page) {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  }
 
   let content;
   if (loading) {
@@ -40,23 +61,30 @@ export default function ListingsPage() {
   } else if (data.results.length === 0) {
     content = <p>No properties match your filters. Try changing or clearing them.</p>;
   } else {
+    const first = (currentPage - 1) * itemsPerPage + 1;
+    const last = first + data.results.length - 1;
     content = (
       <>
         <p className="listings__count">
-          Showing {data.results.length} of {data.total.toLocaleString()} properties
+          Showing {first.toLocaleString()}-{last.toLocaleString()} of {data.total.toLocaleString()} properties
         </p>
         <div className="listings__grid">
           {data.results.map((property) => (
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(data.total / itemsPerPage)}
+          onPageChange={handlePageChange}
+        />
       </>
     );
   }
 
   return (
     <section>
-      <PropertyFilters onSearch={loadProperties} onClear={() => loadProperties()} />
+      <PropertyFilters onSearch={handleSearch} onClear={handleClear} />
       {content}
     </section>
   );

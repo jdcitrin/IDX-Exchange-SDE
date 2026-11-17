@@ -1,0 +1,28 @@
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 24px;
+}
+
+.pagination button {
+  font: inherit;
+  padding: 6px 10px;
+  color: #000;
+  background: #fff;
+  border: 1px solid #767676;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.pagination button[aria-current='page'] {
+  color: #fff;
+  background: #000;
+}
+
+.pagination button:disabled {
+  color: #999;
+  cursor: default;
+}

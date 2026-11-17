@@ -1,14 +1,9 @@
-export function getFirstPhoto(rawPhotos) {
-  if (typeof rawPhotos !== 'string' || rawPhotos.trim() === '') return null;
-
-  let photos;
+// turn the L_Photos json string into an array of urls
+export function parsePhotos(rawPhotos) {
   try {
-    photos = JSON.parse(rawPhotos);
+    const photos = JSON.parse(rawPhotos);
+    return Array.isArray(photos) ? photos.filter((url) => typeof url === 'string' && url !== '') : [];
   } catch {
-    return null;
+    return [];
   }
-
-  if (!Array.isArray(photos)) return null;
-  const first = photos.find((url) => typeof url === 'string' && url.trim() !== '');
-  return first ?? null;
 }

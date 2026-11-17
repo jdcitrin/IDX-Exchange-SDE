@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { getFirstPhoto } from '../utils/photos';
+import { useNavigate } from 'react-router-dom';
+import PropertyImageCarousel from './PropertyImageCarousel';
 import './PropertyCard.css';
 
 function formatPrice(price) {
@@ -10,22 +10,13 @@ function formatNumber(value) {
   return value == null ? '—' : Number(value).toLocaleString();
 }
 
+// one listing card that opens the detail page
 export default function PropertyCard({ property }) {
-  const photo = getFirstPhoto(property.photos);
-  const [imageFailed, setImageFailed] = useState(false);
+  const navigate = useNavigate();
 
   return (
-    <article className="property-card">
-      {photo && !imageFailed ? (
-        <img
-          className="property-card__photo"
-          src={photo}
-          alt={property.address || 'Property photo'}
-          onError={() => setImageFailed(true)}
-        />
-      ) : (
-        <div className="property-card__photo property-card__photo--empty">No photo available</div>
-      )}
+    <article className="property-card" onClick={() => navigate(`/property/${property.listingId}`)}>
+      <PropertyImageCarousel rawPhotos={property.photos} alt={property.address || 'Property photo'} />
 
       <ul className="property-card__details">
         <li>{formatPrice(property.price)}</li>
